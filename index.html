@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz Tecnologia 🤖</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #1f2937;
+      --border:    #30363d;
+      --red:       #e94560;
+      --red-dark:  #c73450;
+      --blue:      #378ADD;
+      --blue-dark: #185FA5;
+      --gold:      #FAC775;
+      --green:     #3B6D11;
+      --green-bg:  #EAF3DE;
+      --green-bd:  #639922;
+      --err-bg:    #2d1515;
+      --err-bd:    #7d2020;
+      --text:      #e6edf3;
+      --text-2:    #8b949e;
+      --text-3:    #6e7681;
+      --radius:    10px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 10px 36px;
+    }
+
+    /* ── Layout ── */
+    #app {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ── Canvas ── */
+    #cv {
+      display: block;
+      width: 100%;
+      border-radius: var(--radius) var(--radius) 0 0;
+      background: var(--bg);
+    }
+
+    /* ── Card ── */
+    #card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
+      overflow: hidden;
+    }
+
+    /* ── Intro ── */
+    #intro { padding: 18px 16px 20px; text-align: center; }
+    #intro h1 { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+    #intro p  { font-size: 13px; color: var(--text-2); line-height: 1.55; margin-bottom: 6px; }
+
+    .badges {
+      display: flex; flex-wrap: wrap; gap: 5px;
+      justify-content: center; margin: 10px 0 8px;
+    }
+    .badge {
+      font-size: 11px; padding: 3px 10px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 20px; color: var(--text-2);
+    }
+    .badge.accent { color: var(--gold); border-color: #5a4a1a; background: #1f1a0d; }
+
+    /* ── Botão Começar — compacto com símbolo ↵ ── */
+    #btn-start {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 8px;
+      background: var(--red); color: #fff;
+      border: none; padding: 9px 20px;
+      border-radius: var(--radius); font-size: 13px;
+      font-weight: 600; cursor: pointer;
+      transition: background .2s, transform .1s;
+      letter-spacing: .3px;
+    }
+    #btn-start .enter-key {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px;
+      background: rgba(255,255,255,.2);
+      border-radius: 5px;
+      font-size: 14px; line-height: 1;
+    }
+    #btn-start:hover  { background: var(--red-dark); }
+    #btn-start:active { transform: scale(.97); }
+
+    /* ── Quiz ── */
+    #quiz { padding: 14px 14px 16px; display: none; }
+
+    /* progress bar */
+    .prog-track {
+      height: 4px; background: var(--surface2);
+      border-radius: 3px; margin-bottom: 14px; overflow: hidden;
+    }
+    .prog-fill {
+      height: 4px; background: var(--red);
+      border-radius: 3px; transition: width .5s ease;
+    }
+
+    /* top row */
+    .top-row {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 10px;
+    }
+    .qnum  { font-size: 10px; letter-spacing: 1px; color: var(--text-3); text-transform: uppercase; }
+    .lives { font-size: 14px; }
+
+    /* question */
+    #qtext {
+      font-size: 15px; font-weight: 500; line-height: 1.5;
+      margin-bottom: 14px; min-height: 44px;
+    }
+
+    /* answer grid — 1 col mobile, 2 cols tablet+ */
+    #ans-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 7px; margin-bottom: 12px;
+    }
+    @media (min-width: 420px) {
+      #ans-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .abtn {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 11px 11px;
+      font-size: 13px; color: var(--text);
+      cursor: pointer; text-align: left;
+      font-family: inherit; line-height: 1.4;
+      transition: background .15s, border-color .15s, transform .1s;
+    }
+    .abtn:hover:not(:disabled) {
+      background: #2a3240; border-color: #5a6472;
+    }
+    .abtn:active:not(:disabled) { transform: scale(.98); }
+    .abtn:disabled { cursor: default; }
+    .abtn .letter {
+      font-weight: 700; color: var(--text-3);
+      margin-right: 6px; font-size: 11px;
+    }
+    .abtn.ok  { background: #0d2210; border-color: var(--green-bd); color: #63dd91; }
+    .abtn.no  { background: var(--err-bg); border-color: var(--err-bd); color: #f47a7a; }
+
+    /* explanation */
+    #expl {
+      display: none;
+      background: var(--surface2); border-radius: var(--radius);
+      border-left: 3px solid var(--blue);
+      padding: 11px 13px; margin-bottom: 12px;
+      font-size: 12px; color: var(--text-2); line-height: 1.6;
+    }
+    #expl strong { color: var(--text); font-size: 13px; }
+
+    /* next button */
+    #btn-next {
+      display: none; width: 100%;
+      background: var(--red); color: #fff; border: none;
+      padding: 11px; border-radius: var(--radius);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: background .2s;
+    }
+    #btn-next:hover { background: var(--red-dark); }
+
+    /* ── End screen ── */
+    #endscreen { padding: 22px 16px 24px; text-align: center; display: none; }
+    #endscreen h2 { font-size: 19px; font-weight: 600; margin: 8px 0 5px; }
+    #endscreen p  { font-size: 13px; color: var(--text-2); line-height: 1.6; margin-bottom: 4px; }
+
+    .score-row {
+      display: flex; gap: 8px;
+      justify-content: center; margin: 16px 0;
+    }
+    .scard {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 14px;
+      text-align: center; flex: 1; min-width: 0;
+    }
+    .scard-label { font-size: 9px; color: var(--text-3); letter-spacing: 1px; text-transform: uppercase; }
+    .scard-val   { font-size: 24px; font-weight: 600; margin-top: 3px; }
+
+    #btn-restart {
+      background: var(--red); color: #fff; border: none;
+      padding: 10px 26px; border-radius: var(--radius);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: background .2s;
+    }
+    #btn-restart:hover { background: var(--red-dark); }
+
+    /* ── Achievement list ── */
+    #ach-section {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .ach-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px; font-weight: 600;
+      color: var(--text-3); letter-spacing: 1px; text-transform: uppercase;
+    }
+    .ach {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+      opacity: .3; transition: opacity .5s, background .5s;
+    }
+    .ach:last-child { border-bottom: none; }
+    .ach.on { opacity: 1; background: #0d1a0d; }
+    .ach .ai  { font-size: 18px; width: 26px; text-align: center; flex-shrink: 0; }
+    .ach .at  { flex: 1; min-width: 0; }
+    .ach .an  { font-size: 12px; font-weight: 500; }
+    .ach .ad  { font-size: 10px; color: var(--text-3); margin-top: 1px; }
+    .ach .ack { font-size: 14px; color: var(--green-bd); flex-shrink: 0; }
+
+    /* ── Toast — responsivo ── */
+    #toast {
+      position: fixed; bottom: 16px; left: 50%;
+      transform: translateX(-50%) translateY(140px);
+      background: #0d1117; color: #fff;
+      border: 1px solid #30363d;
+      border-radius: 12px; padding: 11px 16px;
+      display: flex; align-items: center; gap: 11px;
+      box-shadow: 0 10px 32px rgba(0,0,0,.6);
+      transition: transform .45s cubic-bezier(.34,1.56,.64,1);
+      z-index: 9999;
+      width: calc(100% - 32px);
+      max-width: 360px;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    .t-icon  { font-size: 26px; flex-shrink: 0; }
+    .t-label { font-size: 9px; color: var(--red); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; }
+    .t-name  { font-size: 13px; font-weight: 600; margin-top: 2px; }
+    .t-sub   { font-size: 10px; color: rgba(255,255,255,.45); margin-top: 2px; }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 16px;
+      font-size: 10px; color: var(--text-3); text-align: center;
+    }
+
+    /* ── Tablet: ajustes extras a partir de 480px ── */
+    @media (min-width: 480px) {
+      body { padding: 20px 16px 44px; }
+      #intro { padding: 24px 24px 26px; }
+      #intro h1 { font-size: 22px; }
+      #quiz { padding: 18px 20px 20px; }
+      #endscreen { padding: 28px 24px; }
+      #btn-start { font-size: 14px; padding: 10px 24px; }
+      #qtext { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── Animated Canvas ── -->
+  <canvas id="cv" width="520" height="140"></canvas>
+
+  <!-- ── Card ── -->
+  <div id="card">
+
+    <!-- Tela inicial -->
+    <div id="intro">
+      <h1>🤖 Quiz Tecnologia</h1>
+      <p>Teste seus conhecimentos sobre tecnologia e computação com o robô mais nerd do pedaço!</p>
+      <div class="badges">
+        <span class="badge">10 perguntas</span>
+        <span class="badge">5 conquistas</span>
+        <span class="badge">3 vidas</span>
+        <span class="badge accent">🔊 Meme É TECNOLOGIA!</span>
+      </div>
+      <p style="font-size:12px;color:var(--text-3)">Ative o som do seu dispositivo para ouvir o meme nas conquistas 😄</p>
+      <button id="btn-start">Começar Quiz <span class="enter-key">↵</span></button>
+    </div>
+
+    <!-- Tela do quiz -->
+    <div id="quiz">
+      <div class="prog-track"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+      <div class="top-row">
+        <span class="qnum" id="qnum">PERGUNTA 1 DE 10</span>
+        <span class="lives" id="lives">❤️❤️❤️</span>
+      </div>
+      <div id="qtext"></div>
+      <div id="ans-grid"></div>
+      <div id="expl"></div>
+      <button id="btn-next">Próxima Pergunta →</button>
+    </div>
+
+    <!-- Tela de resultado -->
+    <div id="endscreen">
+      <div style="font-size:56px" id="e-emoji">🏆</div>
+      <h2 id="e-title">Parabéns!</h2>
+      <p id="e-msg"></p>
+      <div class="score-row">
+        <div class="scard">
+          <div class="scard-label">Acertos</div>
+          <div class="scard-val" id="e-score">0/10</div>
+        </div>
+        <div class="scard">
+          <div class="scard-label">Pontos</div>
+          <div class="scard-val" id="e-pts">0</div>
+        </div>
+        <div class="scard">
+          <div class="scard-label">Conquistas</div>
+          <div class="scard-val" id="e-achs">0/5</div>
+        </div>
+      </div>
+      <button id="btn-restart">↺ Jogar de Novo</button>
+    </div>
+
+  </div><!-- /card -->
+
+  <!-- ── Conquistas ── -->
+  <div id="ach-section">
+    <div class="ach-header">🏅 Conquistas</div>
+    <div class="ach" id="a0"><div class="ai">🌱</div><div class="at"><div class="an">Iniciante Digital</div><div class="ad">Responda a primeira pergunta</div></div><span class="ack" id="ac0"></span></div>
+    <div class="ach" id="a1"><div class="ai">🧠</div><div class="at"><div class="an">Mente Curiosa</div><div class="ad">3 acertos seguidos</div></div><span class="ack" id="ac1"></span></div>
+    <div class="ach" id="a2"><div class="ai">💻</div><div class="at"><div class="an">Dev em Treinamento</div><div class="ad">5 acertos no total</div></div><span class="ack" id="ac2"></span></div>
+    <div class="ach" id="a3"><div class="ai">🚀</div><div class="at"><div class="an">Especialista Tech</div><div class="ad">8 de 10 corretas</div></div><span class="ack" id="ac3"></span></div>
+    <div class="ach" id="a4"><div class="ai">🏆</div><div class="at"><div class="an">Mestre da Tecnologia</div><div class="ad">10 de 10 — perfeito!</div></div><span class="ack" id="ac4"></span></div>
+  </div>
+
+  <footer>Quiz Tecnologia &copy; 2025 — Desenvolvido com Web Audio API + Canvas 2D</footer>
+
+</div><!-- /app -->
+
+<!-- ── Toast de conquista ── -->
+<div id="toast">
+  <div class="t-icon" id="t-icon">🏆</div>
+  <div>
+    <div class="t-label">✦ Conquista Desbloqueada</div>
+    <div class="t-name" id="t-name">...</div>
+    <div class="t-sub"  id="t-sub">...</div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════
+   DADOS: PERGUNTAS DO QUIZ
+════════════════════════════════════════════ */
+const QUESTIONS = [
+  {
+    q: "O que é um algoritmo?",
+    opts: [
+      "Um vírus de computador",
+      "Passos ordenados para resolver um problema",
+      "Um tipo de hardware",
+      "Uma marca de celular"
+    ],
+    ans: 1,
+    exp: "💡 Um algoritmo é como uma receita de bolo: passos ordenados para chegar a um resultado. É a base de toda a programação!"
+  },
+  {
+    q: "Quantos bits existem em 1 byte?",
+    opts: ["4 bits", "16 bits", "8 bits", "2 bits"],
+    ans: 2,
+    exp: "💡 1 byte = 8 bits. Bits são 0s e 1s — a linguagem binária dos computadores. 1 GB equivale a ~1 bilhão de bytes!"
+  },
+  {
+    q: "O que significa a sigla HTML?",
+    opts: [
+      "HyperText Markup Language",
+      "High Tech Modern Language",
+      "Home Tool Markup Level",
+      "Hyper Transfer Machine Logic"
+    ],
+    ans: 0,
+    exp: "💡 HTML é o esqueleto de toda página web! Junto com CSS e JavaScript, forma a base da internet que você usa todo dia."
+  },
+  {
+    q: "Qual linguagem cria interatividade nas páginas web?",
+    opts: ["Python", "Java", "C++", "JavaScript"],
+    ans: 3,
+    exp: "💡 JavaScript roda direto no navegador — botões, animações, pop-ups, tudo isso é JS. É a linguagem da web!"
+  },
+  {
+    q: "O que é armazenamento em nuvem (cloud)?",
+    opts: [
+      "Um tipo de processador",
+      "Guardar dados em servidores pela internet",
+      "Um famoso vírus",
+      "Uma rede local sem fio"
+    ],
+    ans: 1,
+    exp: "💡 A nuvem guarda seus arquivos em servidores remotos acessíveis de qualquer lugar. Google Drive e iCloud são exemplos!"
+  },
+  {
+    q: "Quem criou o sistema operacional Linux?",
+    opts: ["Bill Gates", "Steve Jobs", "Linus Torvalds", "Mark Zuckerberg"],
+    ans: 2,
+    exp: "💡 Linus Torvalds criou o Linux em 1991 com 21 anos! Hoje roda em celulares Android, servidores e até na estação espacial ISS!"
+  },
+  {
+    q: "O que é um vírus de computador?",
+    opts: [
+      "Um erro de digitação",
+      "Um tipo de memória RAM",
+      "Programa malicioso que se replica e causa danos",
+      "Conexão de internet lenta"
+    ],
+    ans: 2,
+    exp: "💡 Vírus se copiam e se espalham para danificar sistemas ou roubar dados. Sempre mantenha seu antivírus atualizado!"
+  },
+  {
+    q: "O que significa a sigla CPU?",
+    opts: [
+      "Central Processing Unit",
+      "Computer Program Utility",
+      "Core Power Unit",
+      "Circuit Processing USB"
+    ],
+    ans: 0,
+    exp: "💡 A CPU é o cérebro do computador — executa bilhões de cálculos por segundo. Processadores modernos têm mais de 100 núcleos!"
+  },
+  {
+    q: "O que é Wi-Fi?",
+    opts: [
+      "Um cabo de rede especial",
+      "Transmissão de internet por ondas de rádio",
+      "Um tipo de vírus digital",
+      "Aplicativo de pagamento"
+    ],
+    ans: 1,
+    exp: "💡 Wi-Fi usa ondas de rádio para transmitir dados sem fio. O nome é um trocadilho com 'Hi-Fi' (alta fidelidade de áudio)!"
+  },
+  {
+    q: "Qual empresa criou o sistema operacional Android?",
+    opts: ["Apple", "Microsoft", "Samsung", "Google"],
+    ans: 3,
+    exp: "💡 O Android foi criado pela Android Inc. e comprado pelo Google em 2005. Hoje está em mais de 3 bilhões de aparelhos!"
+  }
+];
+
+/* ════════════════════════════════════════════
+   DADOS: CONQUISTAS
+════════════════════════════════════════════ */
+const ACHIEVEMENTS = [
+  { icon: "🌱", name: "Iniciante Digital",       sub: "Primeira pergunta respondida!" },
+  { icon: "🧠", name: "Mente Curiosa",           sub: "3 acertos seguidos!" },
+  { icon: "💻", name: "Dev em Treinamento",      sub: "5 acertos no total!" },
+  { icon: "🚀", name: "Especialista Tech",        sub: "8 de 10 corretas — incrível!" },
+  { icon: "🏆", name: "Mestre da Tecnologia",    sub: "10 de 10 — É TECNOLOGIA! 🤖" },
+];
+
+/* ════════════════════════════════════════════
+   ESTADO DO JOGO
+════════════════════════════════════════════ */
+let G = createState();
+function createState() {
+  return {
+    qi:       0,      // índice da pergunta atual
+    correct:  0,      // total de acertos
+    lives:    3,      // vidas restantes
+    pts:      0,      // pontuação
+    streak:   0,      // acertos consecutivos
+    done:     Array(5).fill(false),
+    answered: false,
+  };
+}
+
+/* ════════════════════════════════════════════
+   ESTADO DO PERSONAGEM (Canvas)
+════════════════════════════════════════════ */
+let Ch = {
+  x: 60, y: 76,
+  vy: 0, grnd: true,
+  anim: 'idle',   // 'idle' | 'ok' | 'no'
+  t: 0,
+  parts: [],       // partículas
+};
+let popup  = null; // popup de pontos (+pts)
+let frameN = 0;
+
+/* ════════════════════════════════════════════
+   ÁUDIO — Web Audio API
+════════════════════════════════════════════ */
+let audioCtx;
+function getACtx() {
+  if (!audioCtx)
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+/**
+ * Toca uma nota simples.
+ * @param {number} freq   - frequência em Hz
+ * @param {string} type   - tipo de onda ('sine' | 'square' | 'sawtooth' | 'triangle')
+ * @param {number} start  - delay em segundos a partir de agora
+ * @param {number} dur    - duração em segundos
+ * @param {number} vol    - volume (0–1)
+ */
+function tone(freq, type, start, dur, vol = 0.1) {
+  const a = getACtx();
+  const osc = a.createOscillator();
+  const gain = a.createGain();
+  osc.connect(gain);
+  gain.connect(a.destination);
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0, a.currentTime + start);
+  gain.gain.linearRampToValueAtTime(vol, a.currentTime + start + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001, a.currentTime + start + dur);
+  osc.start(a.currentTime + start);
+  osc.stop(a.currentTime + start + dur + 0.05);
+}
+
+/** Efeito sonoro: resposta correta */
+function playCorrect() {
+  [523, 659, 784].forEach((f, i) => tone(f, 'sine', i * 0.09, 0.25, 0.12));
+}
+
+/** Efeito sonoro: resposta errada */
+function playWrong() {
+  [380, 270].forEach((f, i) => tone(f, 'sawtooth', i * 0.18, 0.3, 0.09));
+}
+
+/** 
+ * O MEME SONORO: "É... TECNOLOGIA!"
+ * Fanfarre épica + síntese de voz em português
+ */
+function playMemeSound() {
+  // Fanfarre épica ascendente
+  const notes = [261, 329, 392, 523, 659, 784, 1047, 1568];
+  notes.forEach((f, i) => tone(f, i < 4 ? 'square' : 'sine', i * 0.07, 0.35, 0.1));
+  // Shimmer no topo
+  setTimeout(() => tone(2093, 'triangle', 0, 0.5, 0.08), 560);
+  // Web Speech API — A VOZ DO MEME 🤖
+  setTimeout(() => speak('É... TECNOLOGIA!', 0.7, 0.88), 680);
+}
+
+/** Fanfarre final — para quem acerta tudo */
+function playFinalFanfare() {
+  const seq = [
+    [261, 0], [329, .12], [392, .24], [523, .38],
+    [659, .52], [784, .66], [1047, .82], [1568, 1.0],
+    [1047, 1.2], [1568, 1.45]
+  ];
+  seq.forEach(([f, t]) => tone(f, 'sine', t, 0.45, 0.14));
+  setTimeout(() =>
+    speak('Parabéns! Você é o Mestre da Tecnologia! É... TECNOLOGIA!', 0.8, 0.95),
+    900
+  );
+}
+
+/**
+ * Web Speech API — voz sintetizada em pt-BR
+ */
+function speak(text, pitch = 0.75, rate = 0.88) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang   = 'pt-BR';
+  u.pitch  = pitch;
+  u.rate   = rate;
+  u.volume = 1;
+  speechSynthesis.speak(u);
+}
+
+/* ════════════════════════════════════════════
+   TOAST DE CONQUISTA (fila)
+════════════════════════════════════════════ */
+let toastQueue = [];
+let toasting   = false;
+
+function showToast(ach, isMeme = false) {
+  toastQueue.push({ ...ach, isMeme });
+  if (!toasting) processToastQueue();
+}
+
+function processToastQueue() {
+  if (!toastQueue.length) { toasting = false; return; }
+  toasting = true;
+  const t = toastQueue.shift();
+  document.getElementById('t-icon').textContent = t.icon;
+  document.getElementById('t-name').textContent = t.name;
+  document.getElementById('t-sub').textContent  = t.sub;
+  document.getElementById('toast').classList.add('show');
+  t.isMeme ? playMemeSound() : playCorrect();
+  setTimeout(() => {
+    document.getElementById('toast').classList.remove('show');
+    setTimeout(processToastQueue, 500);
+  }, 3400);
+}
+
+/* ════════════════════════════════════════════
+   SISTEMA DE CONQUISTAS
+════════════════════════════════════════════ */
+function unlock(i) {
+  if (G.done[i]) return;
+  G.done[i] = true;
+  document.getElementById('a'  + i).classList.add('on');
+  document.getElementById('ac' + i).textContent = '✓';
+  showToast(ACHIEVEMENTS[i], i >= 3);
+}
+
+function checkAchievements() {
+  if (G.qi      >= 1)  unlock(0);  // Iniciante Digital
+  if (G.streak  >= 3)  unlock(1);  // Mente Curiosa
+  if (G.correct >= 5)  unlock(2);  // Dev em Treinamento
+  if (G.correct >= 8)  unlock(3);  // Especialista Tech
+  if (G.correct >= 10) unlock(4);  // Mestre da Tecnologia
+}
+
+/* ════════════════════════════════════════════
+   CANVAS — DESENHO DO ROBÔ
+════════════════════════════════════════════ */
+const cv  = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+
+/** Fundo com grid de circuito */
+function drawBackground() {
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, 520, 140);
+
+  // Grade de circuito
+  ctx.strokeStyle = 'rgba(55,138,221,0.1)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= 520; x += 40) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 140); ctx.stroke();
+  }
+  for (let y = 0; y <= 140; y += 40) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(520, y); ctx.stroke();
+  }
+
+  // Nós do circuito
+  ctx.fillStyle = 'rgba(55,138,221,0.28)';
+  for (let x = 0; x <= 520; x += 40)
+    for (let y = 0; y <= 140; y += 40) {
+      ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI * 2); ctx.fill();
+    }
+
+  // Faixas decorativas (trilhas de circuito)
+  ctx.fillStyle = 'rgba(233,69,96,0.1)';
+  [[60,88],[150,68],[240,98],[350,75],[450,92]].forEach(([bx, by]) => {
+    ctx.fillRect(bx, by, 32, 6);
+    ctx.fillRect(bx + 36, by, 14, 6);
+  });
+
+  // Chão
+  ctx.fillStyle = '#161b22';
+  ctx.fillRect(0, 112, 520, 28);
+  ctx.fillStyle = '#e94560';
+  ctx.fillRect(0, 112, 520, 2);
+}
+
+/**
+ * Desenha o robô na posição (x, y).
+ * @param {number} x     - posição horizontal
+ * @param {number} y     - posição vertical do topo do corpo
+ * @param {string} anim  - 'idle' | 'ok' | 'no'
+ * @param {number} t     - contador de frames (para animação)
+ */
+function drawRobot(x, y, anim, t) {
+  const legFrame = Math.floor(t / 8) % 2;
+
+  // --- Sombra ---
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.beginPath();
+  ctx.ellipse(x + 12, 114, 14, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // --- Corpo ---
+  ctx.fillStyle = '#1a4a8a';
+  ctx.fillRect(x + 2, y, 22, 20);
+  ctx.fillStyle = '#378ADD';
+  ctx.fillRect(x + 4, y + 2, 18, 5);  // painel superior
+
+  // Tela no peito
+  ctx.fillStyle = '#0d2240';
+  ctx.fillRect(x + 5, y + 9, 14, 9);
+  const screenColor = anim === 'ok' ? '#63dd91' : anim === 'no' ? '#e24b4a' : '#378ADD';
+  ctx.fillStyle = screenColor;
+  ctx.fillRect(x + 7, y + 11, 10, 5);
+
+  // --- Cabeça ---
+  ctx.fillStyle = '#B5D4F4';
+  ctx.fillRect(x, y - 17, 24, 19);
+  ctx.fillStyle = '#85B7EB';
+  ctx.fillRect(x, y - 17, 24, 4);  // viseira
+
+  // --- Antena ---
+  ctx.strokeStyle = '#FAC775';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x + 12, y - 17);
+  ctx.lineTo(x + 12, y - 27);
+  ctx.stroke();
+  // luz pulsante da antena
+  const pulse = 0.65 + 0.35 * Math.sin(t * 0.12);
+  ctx.fillStyle = anim === 'ok' ? '#3B6D11' : anim === 'no' ? '#e24b4a' : '#FAC775';
+  ctx.globalAlpha = pulse;
+  ctx.beginPath();
+  ctx.arc(x + 12, y - 28, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // --- Olhos ---
+  const eyeColor = anim === 'ok' ? '#3B6D11' : anim === 'no' ? '#e24b4a' : '#0f3460';
+  ctx.fillStyle = eyeColor;
+  ctx.fillRect(x + 3,  y - 12, 6, 6);
+  ctx.fillRect(x + 15, y - 12, 6, 6);
+  if (anim === 'ok') {
+    // olhos "^_^" de felicidade
+    ctx.fillStyle = '#B5D4F4';
+    ctx.fillRect(x + 3,  y - 12, 6, 2);
+    ctx.fillRect(x + 15, y - 12, 6, 2);
+  }
+  if (anim !== 'no') {
+    // brilho dos olhos
+    ctx.fillStyle = 'rgba(255,255,255,.55)';
+    ctx.fillRect(x + 4,  y - 11, 2, 2);
+    ctx.fillRect(x + 16, y - 11, 2, 2);
+  }
+
+  // --- Boca ---
+  ctx.fillStyle = anim === 'ok' ? '#63dd91' : anim === 'no' ? '#e24b4a' : '#378ADD';
+  if (anim === 'ok') {
+    // sorriso largo
+    ctx.fillRect(x + 5, y - 3, 14, 3);
+  } else if (anim === 'no') {
+    // boca triste
+    ctx.fillRect(x + 7, y - 1, 10, 3);
+  } else {
+    // neutro
+    ctx.fillRect(x + 7, y - 2, 10, 3);
+  }
+
+  // --- Pernas (animadas) ---
+  ctx.fillStyle = '#0a2040';
+  if (!Ch.grnd || legFrame === 0) {
+    ctx.fillRect(x + 3,  y + 20, 8, 12);
+    ctx.fillRect(x + 15, y + 20, 8, 12);
+  } else {
+    ctx.fillRect(x + 3,  y + 20, 10, 9);
+    ctx.fillRect(x + 13, y + 20, 10, 9);
+  }
+
+  // --- Pés ---
+  ctx.fillStyle = '#378ADD';
+  if (!Ch.grnd || legFrame === 0) {
+    ctx.fillRect(x + 2,  y + 31, 10, 4);
+    ctx.fillRect(x + 14, y + 31, 10, 4);
+  } else {
+    ctx.fillRect(x + 2,  y + 28, 11, 4);
+    ctx.fillRect(x + 13, y + 28, 11, 4);
+  }
+
+  // --- Braços ---
+  ctx.fillStyle = '#1a4a8a';
+  if (anim === 'ok') {
+    // braços levantados (comemoração)
+    ctx.fillRect(x - 7,  y - 10, 6, 18);
+    ctx.fillRect(x + 25, y - 10, 6, 18);
+    ctx.fillStyle = '#B5D4F4';
+    ctx.fillRect(x - 8,  y - 12, 8, 6);
+    ctx.fillRect(x + 24, y - 12, 8, 6);
+  } else {
+    ctx.fillRect(x - 5,  y + 3, 6, 13);
+    ctx.fillRect(x + 23, y + 3, 6, 13);
+  }
+}
+
+/** Desenha todas as partículas */
+function drawParticles() {
+  Ch.parts.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+/** Cria uma explosão de partículas */
+function burst(color) {
+  const cx = Ch.x + 12, cy = Ch.y;
+  for (let i = 0; i < 14; i++) {
+    Ch.parts.push({
+      x:     cx,
+      y:     cy,
+      vx:    (Math.random() - .5) * 6,
+      vy:    -Math.random() * 7 - 2,
+      life:  1,
+      color: color,
+      r:     2 + Math.random() * 3,
+    });
+  }
+}
+
+/** HUD superior no canvas */
+function drawHUD() {
+  ctx.fillStyle = 'rgba(181,212,244,0.75)';
+  ctx.font = '12px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText(`⭐ ${G.pts} pts  |  ✅ ${G.correct}/10`, 14, 20);
+}
+
+/* ════════════════════════════════════════════
+   LOOP PRINCIPAL DO CANVAS
+════════════════════════════════════════════ */
+let rafId = null;
+
+function startLoop() {
+  if (rafId) cancelAnimationFrame(rafId);
+
+  function loop() {
+    frameN++;
+
+    // ── Física do robô ──
+    if (!Ch.grnd) {
+      Ch.vy += 0.55;
+      Ch.y  += Ch.vy;
+    }
+    if (Ch.y >= 76) {
+      Ch.y   = 76;
+      Ch.vy  = 0;
+      Ch.grnd = true;
+    }
+    Ch.t++;
+
+    // ── Partículas ──
+    Ch.parts.forEach(p => {
+      p.x  += p.vx;
+      p.y  += p.vy;
+      p.vy += 0.18;
+      p.life -= 0.035;
+    });
+    Ch.parts = Ch.parts.filter(p => p.life > 0);
+
+    // ── Desenho ──
+    drawBackground();
+    drawParticles();
+    drawRobot(Ch.x, Ch.y, Ch.anim, Ch.t);
+
+    // ── Popup de pontos ──
+    if (popup) {
+      ctx.globalAlpha = popup.life;
+      ctx.fillStyle   = '#FAC775';
+      ctx.font        = 'bold 14px monospace';
+      ctx.textAlign   = 'center';
+      ctx.fillText(popup.text, Ch.x + 12, popup.y);
+      ctx.globalAlpha = 1;
+      popup.y    -= 1.3;
+      popup.life -= 0.025;
+      if (popup.life <= 0) popup = null;
+    }
+
+    drawHUD();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  loop();
+}
+
+/* ════════════════════════════════════════════
+   LÓGICA DO QUIZ
+════════════════════════════════════════════ */
+
+/** Exibe a pergunta atual */
+function showQuestion() {
+  const q = QUESTIONS[G.qi];
+
+  // atualiza HUD textual
+  document.getElementById('qnum').textContent =
+    `PERGUNTA ${G.qi + 1} DE ${QUESTIONS.length}`;
+  document.getElementById('qtext').textContent = q.q;
+  document.getElementById('prog').style.width =
+    (G.qi / QUESTIONS.length * 100) + '%';
+  document.getElementById('lives').textContent =
+    '❤️'.repeat(G.lives) + '🖤'.repeat(3 - G.lives);
+
+  // monta botões de resposta
+  const grid = document.getElementById('ans-grid');
+  grid.innerHTML = '';
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'abtn';
+    btn.innerHTML = `<span class="letter">${'ABCD'[i]}.</span>${opt}`;
+    btn.addEventListener('click', () => answer(i));
+    grid.appendChild(btn);
+  });
+
+  document.getElementById('expl').style.display     = 'none';
+  document.getElementById('btn-next').style.display = 'none';
+  G.answered = false;
+  Ch.anim    = 'idle';
+}
+
+/**
+ * Processa a resposta do jogador.
+ * @param {number} idx - índice da opção escolhida
+ */
+function answer(idx) {
+  if (G.answered) return;
+  G.answered = true;
+  G.qi++;
+
+  const q       = QUESTIONS[G.qi - 1];
+  const correct = idx === q.ans;
+
+  // colore os botões
+  document.querySelectorAll('.abtn').forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.ans)            btn.classList.add('ok');
+    else if (i === idx && !correct) btn.classList.add('no');
+  });
+
+  // exibe explicação
+  const expl = document.getElementById('expl');
+  expl.innerHTML = `<strong>${correct ? '✅ Correto!' : '❌ Errado!'}</strong> ${q.exp}`;
+  expl.style.display     = 'block';
+  expl.style.borderColor = correct ? '#639922' : '#7d2020';
+
+  if (correct) {
+    G.correct++;
+    G.streak++;
+    const bonus = 10 + G.streak * 3;
+    G.pts += bonus;
+
+    playCorrect();
+    burst('#FAC775');
+    Ch.anim = 'ok';
+    Ch.grnd = false;
+    Ch.vy   = -11;
+    popup   = { text: `+${bonus} pts`, y: Ch.y - 10, life: 1 };
+
+  } else {
+    G.streak = 0;
+    G.lives--;
+    playWrong();
+    burst('#e24b4a');
+    Ch.anim = 'no';
+    setTimeout(() => Ch.anim = 'idle', 700);
+  }
+
+  checkAchievements();
+
+  const btnNext = document.getElementById('btn-next');
+  btnNext.style.display = 'block';
+
+  if (G.qi >= QUESTIONS.length) {
+    btnNext.textContent = 'Ver Resultado 🏁';
+  } else if (G.lives <= 0) {
+    btnNext.textContent = 'Sem vidas — Ver Resultado 💀';
+  } else {
+    btnNext.textContent = 'Próxima Pergunta →';
+  }
+}
+
+/** Exibe a tela de resultado final */
+function showEnd() {
+  document.getElementById('quiz').style.display      = 'none';
+  document.getElementById('endscreen').style.display = 'block';
+  document.getElementById('prog').style.width        = '100%';
+
+  const pct = G.correct / QUESTIONS.length;
+  let emoji, title, msg;
+
+  if (G.correct === 10) {
+    emoji = '🏆';
+    title = 'Mestre da Tecnologia!';
+    msg   = 'Perfeito! 10 de 10! Você é lendário! É TECNOLOGIA! 🤖';
+    playFinalFanfare();
+  } else if (pct >= .8) {
+    emoji = '🚀';
+    title = 'Excelente!';
+    msg   = 'Você tem ótimo conhecimento em tecnologia. Quase na perfeição!';
+  } else if (pct >= .6) {
+    emoji = '💻';
+    title = 'Muito bem!';
+    msg   = 'Você foi bem! Continue estudando para dominar a área!';
+  } else if (pct >= .4) {
+    emoji = '📚';
+    title = 'Quase lá!';
+    msg   = 'Tecnologia é fascinante — vale estudar mais! Você consegue!';
+  } else {
+    emoji = '😅';
+    title = 'Continue tentando!';
+    msg   = 'A tecnologia é vasta — estude mais e tente de novo!';
+  }
+
+  document.getElementById('e-emoji').textContent = emoji;
+  document.getElementById('e-title').textContent = title;
+  document.getElementById('e-msg').textContent   = msg;
+  document.getElementById('e-score').textContent = `${G.correct}/10`;
+  document.getElementById('e-pts').textContent   = G.pts;
+  document.getElementById('e-achs').textContent  =
+    G.done.filter(Boolean).length + '/5';
+}
+
+/* ════════════════════════════════════════════
+   INICIALIZAÇÃO
+════════════════════════════════════════════ */
+
+function startGame() {
+  G  = createState();
+  Ch = { x: 60, y: 76, vy: 0, grnd: true, anim: 'idle', t: 0, parts: [] };
+  popup = null;
+
+  // reseta UI de conquistas
+  for (let i = 0; i < 5; i++) {
+    document.getElementById('a'  + i).classList.remove('on');
+    document.getElementById('ac' + i).textContent = '';
+  }
+
+  document.getElementById('intro').style.display      = 'none';
+  document.getElementById('endscreen').style.display  = 'none';
+  document.getElementById('quiz').style.display       = 'block';
+
+  showQuestion();
+}
+
+// Botões
+document.getElementById('btn-start').addEventListener('click', startGame);
+
+document.getElementById('btn-next').addEventListener('click', () => {
+  if (G.lives <= 0 || G.qi >= QUESTIONS.length) showEnd();
+  else showQuestion();
+});
+
+document.getElementById('btn-restart').addEventListener('click', startGame);
+
+// Inicia o loop do canvas desde o início (tela de intro)
+startLoop();
+</script>
+
+</body>
+</html>
